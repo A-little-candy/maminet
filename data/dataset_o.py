@@ -1,12 +1,13 @@
+import random
+
 import cv2
 import numpy as np
 import torch
 from scipy.ndimage.morphology import distance_transform_edt
 from scipy.signal import convolve2d
 from config import Config
-import random
 from torchvision import transforms
-import ipdb
+
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, path: str, cfg: Config, kind: str):
@@ -19,6 +20,7 @@ class Dataset(torch.utils.data.Dataset):
 
         self.num_negatives_per_one_positive: int = 1
         self.frequency_sampling: bool = self.cfg.FREQUENCY_SAMPLING and self.kind == 'TRAIN'
+
 
     def init_extra(self):
         self.counter = 0
@@ -68,7 +70,6 @@ class Dataset(torch.utils.data.Dataset):
 
         image, seg_mask, seg_loss_mask, is_segmented, image_path, seg_mask_path, sample_name = item
 
-        # ipdb.set_trace()
         if self.cfg.ON_DEMAND_READ:  # STEEL only so far
             if image_path == -1 or seg_mask_path == -1:
                 raise Exception('For ON_DEMAND_READ image and seg_mask paths must be set in read_contents')
@@ -85,37 +86,76 @@ class Dataset(torch.utils.data.Dataset):
             else:
                 seg_loss_mask = self.distance_transform(seg_mask, self.cfg.WEIGHTED_SEG_LOSS_MAX, self.cfg.WEIGHTED_SEG_LOSS_P)
 
+            # if self.kind == 'TRAIN':
+            #     if random.random() < 0.5:
+            #         img, seg_mask, seg_loss_mask = self.jigsaw_generator(img,seg_mask,seg_loss_mask,8)
+
+
             image = self.to_tensor(img)
             seg_mask = self.to_tensor(self.downsize(seg_mask))
             seg_loss_mask = self.to_tensor(self.downsize(seg_loss_mask))
-
-
+            # seg_mask = self.to_tensor(seg_mask)
+            # seg_loss_mask = self.to_tensor(seg_loss_mask)
 
         self.counter = self.counter + 1
-        if self.kind == 'TRAIN':
-            image, seg_mask, seg_loss_mask = self.DataAugment(image, seg_mask, seg_loss_mask)
+
+        # if self.kind == 'TRAIN':
+        #     image, seg_mask, seg_loss_mask = self.DataAugment(image, seg_mask, seg_loss_mask)
 
         return image, seg_mask, seg_loss_mask, is_segmented, sample_name
+
+
 
     def __len__(self):
         return self.len
 
-
-    def read_contents(self):
-        pass
+    # def jigsaw_generator(self,images,seg_mask, seg_loss_mask, n):
+    #     l = []
+    #     for a in range(n):
+    #         for b in range(n):
+    #             l.append([a, b])
+    #     block_size_x = self.image_size[0] // n
+    #     block_size_y = self.image_size[1] // n
+    #     rounds = n ** 2
+    #     random.shuffle(l)
+    #     jigsaws_img = images.clone()
+    #     jigsaws_seg_mask = seg_mask.clone()
+    #     jigsaws_seg_loss_mask = seg_loss_mask.clone()
+    #
+    #     for i in range(rounds):
+    #         x, y = l[i]
+    #         temp_img = jigsaws_img[..., 0:block_size_x, 0:block_size_y].clone()
+    #         temp_seg_mask = jigsaws_seg_mask[..., 0:block_size_x, 0:block_size_y].clone()
+    #         temp_seg_loss_mask = jigsaws_seg_mask[..., 0:block_size_x, 0:block_size_y].clone()
+    #
+    #         jigsaws_img[..., 0:block_size_x, 0:block_size_y] = jigsaws_img[..., x * block_size_x:(x + 1) * block_size_x,
+    #                                                    y * block_size_y:(y + 1) * block_size_y].clone()
+    #         jigsaws_seg_mask[..., 0:block_size_x, 0:block_size_y] = jigsaws_seg_mask[..., x * block_size_x:(x + 1) * block_size_x,
+    #                                                            y * block_size_y:(y + 1) * block_size_y].clone()
+    #         jigsaws_seg_loss_mask[..., 0:block_size_x, 0:block_size_y] = jigsaws_seg_loss_mask[..., x * block_size_x:(x + 1) * block_size_x,
+    #                                                            y * block_size_y:(y + 1) * block_size_y].clone()
+    #
+    #         jigsaws_img[..., x * block_size_x:(x + 1) * block_size_x, y * block_size_y:(y + 1) * block_size_y] = temp_img
+    #         jigsaws_seg_mask[..., x * block_size_x:(x + 1) * block_size_x,
+    #         y * block_size_y:(y + 1) * block_size_y] = temp_seg_mask
+    #         jigsaws_seg_loss_mask[..., x * block_size_x:(x + 1) * block_size_x,
+    #         y * block_size_y:(y + 1) * block_size_y] = temp_seg_loss_mask
+    #
+    #     return jigsaws_img,jigsaws_seg_mask,jigsaws_seg_loss_mask
 
     def DataAugment(self, image, seg_mask, seg_loss_mask):
-        if random.random() < 0.3:
+        if random.random() < 0.5:
             HF = transforms.RandomHorizontalFlip(p = 1)
             image = HF(image)
             seg_mask = HF(seg_mask)
             seg_loss_mask = HF(seg_loss_mask)
         #
-        if random.random() < 0.3:
-            VF = transforms.RandomVerticalFlip(p = 1)
-            image = VF(image)
-            seg_mask = VF(seg_mask)
-            seg_loss_mask = VF(seg_loss_mask)
+        # if random.random() < 0.25:
+        #     VF = transforms.RandomVerticalFlip(p = 1)
+        #     image = VF(image)
+        #     seg_mask = VF(seg_mask)
+        #     seg_loss_mask = VF(seg_loss_mask)
+
 
         # if random.random() < 0.5:
         #     angle = random.randint(0, 90)
@@ -124,7 +164,13 @@ class Dataset(torch.utils.data.Dataset):
         #     seg_mask = cv2.warpAffine(seg_mask, matRotate, resize_dim)
         #     seg_loss_mask = cv2.warpAffine(seg_loss_mask, matRotate, resize_dim)
 
+
         return image, seg_mask, seg_loss_mask
+
+
+
+    def read_contents(self):
+        pass
 
     def read_img_resize(self, path, grayscale, resize_dim) -> np.ndarray:
         img = cv2.imread(path, cv2.IMREAD_GRAYSCALE if grayscale else cv2.IMREAD_COLOR)

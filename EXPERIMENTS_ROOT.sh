@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
-#KSDD_PATH="./datasets/KSDD/"
-#DAGM_PATH="./datasets/DAGM/"
-#STEEL_PATH="./datasets/STEEL/"
-#KSDD2_PATH="./datasets/KSDD2/"
+KSDD_PATH="./datasets/KSDD/"
+DAGM_PATH="./datasets/DAGM/"
+STEEL_PATH="./datasets/STEEL/"
+KSDD2_PATH="./datasets/KSDD2/"
 
-KSDD_PATH="/storage/datasets/GOSTOP/RazpokeNaObodu/Dataset2/"
-DAGM_PATH="/storage/datasets/GOSTOP/DAGM/"
-STEEL_PATH="/storage/datasets/GOSTOP/SEVERSTAL_STEEL/"
-KSDD2_PATH="/storage/datasets/GOSTOP/KSDD2/no_dilate/"
+#KSDD_PATH="/storage/datasets/GOSTOP/RazpokeNaObodu/Dataset2/"
+#DAGM_PATH="/storage/datasets/GOSTOP/DAGM/"
+#STEEL_PATH="/storage/datasets/GOSTOP/SEVERSTAL_STEEL/"
+#KSDD2_PATH="/storage/datasets/GOSTOP/KSDD2/no_dilate/"
 
 train_KSDD()
 {
@@ -150,6 +150,7 @@ train_single()
 
     LOG_REDIRECT=$RESULTS_PATH/$DATASET/$RUN_NAME/training_log.txt
 
+#    mkdir -p $RESULTS_PATH/$DATASET/$RUN_NAME/ && python -m ipdb train_net.py --GPU=$GPU $RUN_ARGS | /usr/bin/tee $LOG_REDIRECT
     mkdir -p $RESULTS_PATH/$DATASET/$RUN_NAME/ && python -u train_net.py --GPU=$GPU $RUN_ARGS | /usr/bin/tee $LOG_REDIRECT
 
 

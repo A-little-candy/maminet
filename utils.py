@@ -9,6 +9,71 @@ import os
 import errno
 import pickle
 import cv2
+import ipdb
+import random
+import torch
+
+def jigsaw_generator( images, seg_mask, seg_loss_mask, n):
+
+    image_size = images.shape[2:]
+    # ipdb.set_trace()
+    if n != 1:
+        l = []
+        for a in range(n):
+            for b in range(n):
+                l.append([a, b])
+        block_size_x = image_size[0] // n
+        block_size_y = image_size[1] // n
+        rounds = n ** 2
+        random.shuffle(l)
+        jigsaws_img = images.clone()
+        jigsaws_seg_mask = seg_mask.clone()
+        jigsaws_seg_loss_mask = seg_loss_mask.clone()
+
+        for i in range(rounds):
+            x, y = l[i]
+            temp_img = jigsaws_img[..., 0:block_size_x, 0:block_size_y].clone()
+            temp_seg_mask = jigsaws_seg_mask[..., 0:block_size_x, 0:block_size_y].clone()
+            temp_seg_loss_mask = jigsaws_seg_mask[..., 0:block_size_x, 0:block_size_y].clone()
+
+            jigsaws_img[..., 0:block_size_x, 0:block_size_y] = jigsaws_img[..., x * block_size_x:(x + 1) * block_size_x,
+                                                               y * block_size_y:(y + 1) * block_size_y].clone()
+            jigsaws_seg_mask[..., 0:block_size_x, 0:block_size_y] = jigsaws_seg_mask[...,
+                                                                    x * block_size_x:(x + 1) * block_size_x,
+                                                                    y * block_size_y:(y + 1) * block_size_y].clone()
+            jigsaws_seg_loss_mask[..., 0:block_size_x, 0:block_size_y] = jigsaws_seg_loss_mask[...,
+                                                                         x * block_size_x:(x + 1) * block_size_x,
+                                                                         y * block_size_y:(y + 1) * block_size_y].clone()
+
+            jigsaws_img[..., x * block_size_x:(x + 1) * block_size_x, y * block_size_y:(y + 1) * block_size_y] = temp_img
+            jigsaws_seg_mask[..., x * block_size_x:(x + 1) * block_size_x,
+            y * block_size_y:(y + 1) * block_size_y] = temp_seg_mask
+            jigsaws_seg_loss_mask[..., x * block_size_x:(x + 1) * block_size_x,
+            y * block_size_y:(y + 1) * block_size_y] = temp_seg_loss_mask
+
+        if n == 8:
+            jigsaws_seg_mask = downsize(jigsaws_seg_mask, 2)
+            jigsaws_seg_loss_mask = downsize(jigsaws_seg_loss_mask, 2)
+        elif n == 4:
+            jigsaws_seg_mask = downsize(jigsaws_seg_mask, 4)
+            jigsaws_seg_loss_mask = downsize(jigsaws_seg_loss_mask, 4)
+        elif n == 2:
+            jigsaws_seg_mask = downsize(jigsaws_seg_mask, 8)
+            jigsaws_seg_loss_mask = downsize(jigsaws_seg_loss_mask, 8)
+    else:
+        jigsaws_img = images
+        jigsaws_seg_mask = downsize(seg_mask, 8)
+        jigsaws_seg_loss_mask = downsize(seg_loss_mask, 8)
+
+    return jigsaws_img, jigsaws_seg_mask, jigsaws_seg_loss_mask
+
+
+def downsize(image, downsize_factor):
+    # img_t = torch.from_numpy(np.expand_dims(image, 0 if len(image.shape) == 3 else (0, 1)).astype(np.float32))
+    # img_t = torch.from_numpy(np.expand_dims(image, 0).astype(np.float32))
+    img_t = torch.nn.ReflectionPad2d(padding=(downsize_factor))(image)
+    image_np = torch.nn.AvgPool2d(kernel_size=2 * downsize_factor + 1, stride=downsize_factor)(img_t)
+    return image_np
 
 
 def create_folder(folder, exist_ok=True):

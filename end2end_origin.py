@@ -2,7 +2,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from models import SegDecNet
+from models_origin import SegDecNet
 import numpy as np
 import os
 from torch import nn as nn
@@ -14,6 +14,10 @@ import random
 import cv2
 from config import Config
 from torch.utils.tensorboard import SummaryWriter
+
+
+
+
 
 LVL_ERROR = 10
 LVL_INFO = 5
@@ -99,6 +103,10 @@ class End2End:
                 tensorboard_writer.add_image(f"{iter_index}/seg_loss_mask", seg_loss_masks_[0, :, :, :])
 
             decision, output_seg_mask = model(images_)
+
+            
+
+
 
             if is_segmented[sub_iter]:
                 if self.cfg.WEIGHTED_SEG_LOSS:
@@ -199,6 +207,7 @@ class End2End:
                 if validation_ap > max_validation:
                     max_validation = validation_ap
                     self._save_model(model, "best_state_dict.pth")
+                    print("best_accuracy:", max_validation)
 
                 model.train()
                 if tensorboard_writer is not None:

@@ -5,6 +5,7 @@ from .input_ksdd2 import KSDD2Dataset
 from config import Config
 from torch.utils.data import DataLoader
 from typing import Optional
+from torchvision import transforms as transforms
 
 
 def get_dataset(kind: str, cfg: Config) -> Optional[DataLoader]:
@@ -29,4 +30,4 @@ def get_dataset(kind: str, cfg: Config) -> Optional[DataLoader]:
     drop_last = kind == "TRAIN"
     pin_memory = False
 
-    return DataLoader(dataset=ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, drop_last=drop_last, pin_memory=pin_memory)
+    return DataLoader(dataset=ds, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, drop_last=drop_last, pin_memory=pin_memory, )

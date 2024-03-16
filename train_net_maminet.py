@@ -1,4 +1,4 @@
-from end2end import End2End
+from end2end_maminet import End2End
 import argparse
 from config import Config
 
