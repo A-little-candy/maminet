@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Mixed supervision for surface-defect detection: from weakly to fully supervised learning [Computers in Industry 2021]
 Official PyTorch implementation for ["Mixed supervision for surface-defect detection: from weakly to fully supervised learning"](http://prints.vicos.si/publications/385) published in journal Computers in Industry 2021.
 
@@ -130,8 +129,3 @@ For KSDD you need to combine the results of evaluation from all three folds, you
         
 You can use `read_results.py` to generate a table of results f0r all runs for selected dataset.        
 Note: The model is sensitive to random initialization and data shuffles during the training and will lead to different performance with different runs unless `--REPRODUCIBLE_RUN` is set.        
-
-=======
-# maminet
-codes for paper maminet
->>>>>>> 8486d839ea154485caa83ed2118bac2a0fccfb65
